@@ -15,6 +15,7 @@ const Chat = () => {
   const [state, setState] = useState([]);
   const [message, setMessage] = useState("");
   const [isOpen, setOpen] = useState(false);
+  const [users, setUsers] = useState(0)
 
   useEffect(() => {
     const searchParams = Object.fromEntries(new URLSearchParams(search));
@@ -27,16 +28,23 @@ const Chat = () => {
       setState(_state => [..._state, data]);
     });
   }, []);
-  console.log("Chat  state:", state);
+
+  useEffect(() => {
+    socket.on("joinRoom", ({ data:{users} }) => {
+      setUsers(users.length);
+    });
+  }, []);
+
+  
   const leftRoom = () => {};
   const handleChange = ({ target: { value } }) => {
     setMessage(value);
   };
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (!message) return
-    socket.emit("sendMessage", {message, params})
-    setMessage('')
+  const handleSubmit = e => {
+    e.preventDefault();
+    if (!message) return;
+    socket.emit("sendMessage", { message, params });
+    setMessage("");
   };
   const onEmojiClick = ({ emoji }) => setMessage(`${message} ${emoji}`);
 
@@ -44,7 +52,7 @@ const Chat = () => {
     <div className={styles.wrap}>
       <div className={styles.header}>
         <div className={styles.title}>{params.room}</div>
-        <div className={styles.users}> users in this room</div>
+        <div className={styles.users}> {users} users in this room</div>
         <button
           className={styles.left}
           onClick={leftRoom}
@@ -58,7 +66,10 @@ const Chat = () => {
           name={params.name}
         />
       </div>
-      <form className={styles.form}>
+      <form
+        className={styles.form}
+        onSubmit={handleSubmit}
+      >
         <div className={styles.input}>
           <input
             type="text"
